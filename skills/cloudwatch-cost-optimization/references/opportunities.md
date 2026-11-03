@@ -160,31 +160,6 @@ Ref: [CloudWatch Logs Insights query cost](https://docs.aws.amazon.com/AmazonClo
 - Contributor Insights rules in `ENABLED` state that nobody looks at → **LOW**.
 - **Impact** to state: what the external tool or stream consumer stops receiving.
 
-## 4.10 Orphaned log groups, alarms, and dashboards
-
-Resources left behind after the thing they observe was deleted. They rarely cost much
-on their own, but they are the clearest hygiene signal for a leader and they keep
-accruing storage.
-
-- **Orphaned Lambda log groups:** `/aws/lambda/<function-name>` log groups whose
-  function isn't in the full `ListFunctions` result for that Region → **LOW** (scale
-  with `storedBytes`; HIGH if it is one of the largest groups). Apply the same idea to
-  other producers whose name is in the log group path when the producer can be listed
-  cheaply (for example `/aws/ecs/…`, `/aws/eks/<cluster>/…`, `/aws/rds/instance/…`).
-- **Orphaned alarms:** alarms in `INSUFFICIENT_DATA` whose metric dimensions name a
-  resource that no longer exists (function, instance, table, queue) → **LOW**. This
-  replaces the §4.6 "stuck in INSUFFICIENT_DATA" finding for the same alarm; don't
-  report both.
-- **Orphaned dashboards:** dashboards whose widgets reference only orphaned resources
-  (from `GetDashboard`) → **LOW**.
-- **Recommendation:** confirm the resource is decommissioned, then export the log
-  group to S3 if its history must be kept and delete it, or set a short retention.
-  Delete the orphaned alarms and dashboards.
-- **Impact** to state: the log group may hold the last record of a decommissioned
-  resource (for audits or post-incident review).
-- Report the counts (orphaned log groups, their stored bytes, orphaned alarms and
-  dashboards) as posture KPIs in the Leadership Summary.
-
 ## Interaction rules (apply in Step 5)
 
 - Retention (§4.1) saves storage only; it never reduces ingestion.

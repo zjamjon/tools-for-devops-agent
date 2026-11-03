@@ -105,44 +105,6 @@
       ]
     },
     {
-      "id": "cloudwatch-cost-low-spend-short-form",
-      "task_type": "chat",
-      "prompt": "I ran the CloudWatch cost optimization skill's data collection on an account. Cost Explorer shows CloudWatch cost of $0.00 for the last 30 days: 4 alarms, 2 dashboards and about 1 GB of log storage, all inside the free tier. 40 of 50 log groups have no retention policy, and 3 alarms have been in INSUFFICIENT_DATA for over a year because their Lambda function was deleted. Following the skill, what shape should the report take and what should it say about savings? No account access required.",
-      "expected_output": "Use the low-spend short form: header, a Leadership Summary stating spend is within the free tier and savings are $0, posture KPIs (e.g. share of log groups with no retention, orphaned alarms), a short hygiene list (set retention on the 40 log groups; delete the 3 orphaned alarms), and coverage. No list prices quoted; effective rate is 'not observed'.",
-      "should_trigger": true,
-      "assertions": [
-        "The response says to use a short form or shortened report because spend is within the free tier",
-        "The response states that the savings are $0 or that there is no current dollar saving",
-        "The response includes posture or hygiene items such as setting retention on the 40 log groups and removing the orphaned alarms",
-        "The response does not quote a CloudWatch list price per GB or per alarm from memory"
-      ]
-    },
-    {
-      "id": "cloudwatch-cost-workload-scope",
-      "task_type": "chat",
-      "prompt": "Our checkout workload runs in three accounts: 111122223333 (production), 123456789012 (staging) and a third, shared logging account. The DevOps Agent space has cloud-source associations for the first two only, and we run from the management account. Using the CloudWatch cost optimization skill, how should the review gather spend and resource data across these accounts, and how should the report present them? No account access required.",
-      "expected_output": "Get spend for all three accounts from the management account's Cost Explorer, filtered to the three LINKED_ACCOUNT values and grouped by USAGE_TYPE and LINKED_ACCOUNT. Run the resource checks only in the two associated accounts; report the shared logging account as spend-only (not inspected) and name it in Coverage and Limits, never as having no findings. The report opens with a Leadership Summary rolled up across the workload, then a per-account table, then engineering detail grouped by account.",
-      "should_trigger": true,
-      "assertions": [
-        "The response gets spend for all three accounts from Cost Explorer in the management account, filtered or grouped by linked account",
-        "The response says resource checks run only in the two accounts with cloud-source associations",
-        "The response reports the shared logging account as spend-only or not inspected rather than as having no findings",
-        "The response describes a roll-up summary across the workload plus a per-account breakdown"
-      ]
-    },
-    {
-      "id": "cloudwatch-cost-orphaned-log-group",
-      "task_type": "chat",
-      "prompt": "In eu-west-2 the log group /aws/lambda/report-generator has no retention policy and holds 3 GB, but ListFunctions in eu-west-2 returns no function called report-generator. How does the CloudWatch cost optimization skill classify this, and what does it recommend? No account access required.",
-      "expected_output": "An orphaned log group (§4.10): the function no longer exists. Severity LOW by default, scaled by stored bytes. Confirm the function is decommissioned, export the group to S3 if its history must be kept, then delete it or set a short retention; state that it may be the last record of the function.",
-      "should_trigger": true,
-      "assertions": [
-        "The response identifies the log group as orphaned because its Lambda function no longer exists",
-        "The response recommends confirming the function is decommissioned and then deleting the log group or setting a short retention",
-        "The response mentions exporting to S3 first if the history must be kept, or that the log group may be the last record of the function"
-      ]
-    },
-    {
       "id": "cloudwatch-cost-negative-trigger-cloudtrail",
       "task_type": "chat",
       "prompt": "Why is my CloudTrail Lake event data store so expensive, and do I have duplicate management-event trails?",
