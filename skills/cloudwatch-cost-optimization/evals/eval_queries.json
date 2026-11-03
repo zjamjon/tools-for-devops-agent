@@ -1,7 +1,7 @@
 [
   {"query": "Our CloudWatch bill doubled last month. What's driving it and how do we bring it down?", "should_trigger": true},
   {"query": "Which of our log groups never expire, and what would setting retention save?", "should_trigger": true},
-  {"query": "Review CloudWatch costs for our payments workload across its production and staging accounts.", "should_trigger": true},
+  {"query": "Review CloudWatch costs in this account and tell us what to cut first.", "should_trigger": true},
   {"query": "Are our custom metrics or Container Insights costing too much?", "should_trigger": true},
   {"query": "Why is my CloudTrail Lake event data store so expensive?", "should_trigger": false},
   {"query": "Which source IPs send the most traffic through our NAT Gateway?", "should_trigger": false},

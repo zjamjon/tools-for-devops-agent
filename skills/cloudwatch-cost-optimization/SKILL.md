@@ -1,21 +1,21 @@
 ---
 name: cloudwatch-cost-optimization
 description: Identify and quantify Amazon CloudWatch cost optimization opportunities
-  across CloudWatch Logs, metrics, alarms, dashboards, Logs Insights, and Container
-  Insights. Use this skill when a user asks to reduce, review, or optimize CloudWatch
-  spend, or reports an unexpected CloudWatch cost increase, for one account, a
-  workload spanning several accounts, or an organization. Activate on requests like
-  "why did our CloudWatch bill double", "reduce CloudWatch Logs costs", "which log
-  groups never expire", "are our custom metrics too expensive", "find unused alarms",
-  or "should we use the Essentials log class". It attributes spend by Cost Explorer
-  usage type and inspects log groups, metrics, alarms, dashboards, and queries through
-  read-only APIs, producing a decision-first savings report. Not for CloudTrail costs (use cloudtrail-cost-optimization), NAT Gateway
-  traffic (aws-natgw-traffic-analysis), the agent's own query budget
+  in one AWS account across CloudWatch Logs, metrics, alarms, dashboards, Logs
+  Insights, and Container Insights. Use this skill when a user asks to reduce, review,
+  or optimize CloudWatch spend, or reports an unexpected CloudWatch cost increase.
+  Activate on requests like "why did our CloudWatch bill double", "reduce CloudWatch
+  Logs costs", "which log groups never expire", "are our custom metrics too
+  expensive", "find unused alarms", or "should we use the Essentials log class". It
+  attributes spend by Cost Explorer usage type and inspects log groups, metrics,
+  alarms, dashboards, and queries through read-only APIs, producing a decision-first
+  savings report. Not for CloudTrail costs (use cloudtrail-cost-optimization), NAT
+  Gateway traffic (aws-natgw-traffic-analysis), the agent's own query budget
   (investigation-cost-guardrail), or DevOps Agent's cost (devops-agent-cost-insights).
 metadata:
   author: zjamjon
   version: "1.0.0"
-  summary: "Finds and sizes CloudWatch savings across one account, a workload, or an organization: log retention and ingestion, Essentials class, metric cardinality, alarms, dashboards, queries."
+  summary: "Finds and sizes CloudWatch savings in one AWS account: log retention and ingestion, Essentials log class, metric cardinality, Container Insights, alarms, dashboards, and queries."
   aws-devops-agent-skills.agent-types: "CHAT"
   aws-devops-agent-skills.aws-services: "Amazon CloudWatch"
   aws-devops-agent-skills.technical-domains: "Observability, Cost Optimization"
@@ -28,7 +28,7 @@ aligned with [Amazon CloudWatch pricing](https://aws.amazon.com/cloudwatch/prici
 and [Analyzing, optimizing, and reducing CloudWatch costs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_billing.html).
 
 This skill uses **read-only CloudWatch, CloudWatch Logs, Lambda, EC2, EKS, ECS,
-CloudTrail, IAM, Cost Explorer, and Organizations APIs only**. It never changes a
+CloudTrail, IAM, and Cost Explorer APIs only**. It never changes a
 retention policy, deletes a log group, alarm, or dashboard, or edits a metric filter —
 all remediation is delivered as recommendations for a human to review and apply. It
 does not read log event content, except through the optional, capped log-level sample
@@ -44,13 +44,13 @@ Activate this skill when the user asks to:
 - Decide whether log groups can use the Essentials (formerly Infrequent Access) log class
 - Find high-cardinality custom metrics, unused alarms, or unused dashboards
 - Understand Logs Insights, Container Insights, or `GetMetricData` API spend
-- Do any of the above across a multi-account workload or an organization
 
 Hand off instead when the request is about CloudTrail trails or CloudTrail Lake
 (`cloudtrail-cost-optimization`), NAT Gateway traffic or the flow logs used to analyze
 it (`aws-natgw-traffic-analysis`), keeping the agent's own investigation queries within
 a budget (`investigation-cost-guardrail`), or what DevOps Agent itself costs
-(`devops-agent-cost-insights`).
+(`devops-agent-cost-insights`). The skill reviews one account per run; for several
+accounts, run the review once per account.
 
 ## How CloudWatch Billing Works
 
@@ -86,27 +86,16 @@ write "rate not observed" and link the
 
 Work through these steps in order — each depends on the output of the one before it.
 
-- [ ] **Step 1: Identify target scope.** Ask the user which of three scopes to review,
-  and which Regions:
-  - **Account** — one account. The default when the user gives no scope.
-  - **Workload** — several accounts that together run one application. Ask how to
-    identify it: a list of account IDs, an AWS Cost Category value, or an activated
-    cost allocation tag. Don't guess the workload from account names.
-  - **Organization** — every linked account, from the Organizations management or a
-    delegated-administrator account.
-
-  Also ask, once, for the facts that decide the biggest recommendations: the required
-  log retention per data class (for example application, audit, and security logs),
-  and the tag key that names a resource's owning team, if one exists. If the user
-  doesn't know, proceed and list both under "Decisions needed" in the report.
-  Spend for a workload or organization comes from the management (payer) account's
-  Cost Explorer; resource checks run in each account the Agent Space has a cloud source
-  for (see "Multi-account scope" in
-  [references/data-collection.md](references/data-collection.md)).
+- [ ] **Step 1: Identify target scope.** Confirm the account to review (the Agent
+  Space's cloud source for it) and the Regions; default to every Region with
+  CloudWatch spend in Step 2. Also ask, once, for the facts that decide the biggest
+  recommendations: the required log retention per data class (for example
+  application, audit, and security logs), and the tag key that names a resource's
+  owning team, if one exists. If the user doesn't know, proceed and list both under
+  "Decisions needed" in the report.
 
 - [ ] **Step 2: Attribute spend and trend.** Call `ce.GetCostAndUsage` filtered to
-  `SERVICE = AmazonCloudWatch`, grouped by `USAGE_TYPE` (and `LINKED_ACCOUNT` for a
-  workload or organization), with `UnblendedCost` and `UsageQuantity`, at `MONTHLY`
+  `SERVICE = AmazonCloudWatch`, grouped by `USAGE_TYPE`, with `UnblendedCost` and `UsageQuantity`, at `MONTHLY`
   granularity over **the last three complete calendar months plus the current month to
   date**. Always collect this trend; the severity rules and the report depend on it.
   Make one more call with no service filter for total AWS spend over the same months.
@@ -159,7 +148,7 @@ Work through these steps in order — each depends on the output of the one befo
   [assets/report-template.md](assets/report-template.md). Load that template when
   generating the report. It opens with a decision-first summary for a technology
   leader (monthly and annualized spend and savings, decisions needed, owners), then
-  the per-account roll-up for a workload or organization, then the engineering detail.
+  the engineering detail.
 
 ## Severity Definitions
 
@@ -229,12 +218,10 @@ saving can't be quantified.
   `LookupEvents` can't find them. Calls made by CloudWatch dashboards and by a
   cross-account observability monitoring account are logged when data events are on,
   but aren't charged.
-- **Cost Explorer allows at most two `GroupBy` keys.** Use `USAGE_TYPE` +
-  `LINKED_ACCOUNT` for multi-account scope; the Region is already in the usage-type
-  prefix.
-- **Cross-account observability doesn't move charges.** Sharing logs and metrics with a
-  monitoring account has no extra cost; ingestion, storage, and metric charges stay in
-  the source account that owns the data. Centralizing copies of telemetry
-  (`CentralizedBytes`) does create a second, billed copy.
+- **Cross-account observability doesn't move charges.** If this account is a
+  monitoring account, source-account logs and metrics visible here are billed in the
+  source accounts, not this one; review those accounts separately. Centralized copies
+  of telemetry held in this account (`CentralizedBytes`) are billed here as well as at
+  the source.
 - **Usage-type strings vary.** Classify by suffix and record unmatched usage types as
   "Other" rather than guessing.

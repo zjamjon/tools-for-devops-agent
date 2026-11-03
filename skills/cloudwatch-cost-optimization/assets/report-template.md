@@ -3,9 +3,7 @@
 Output template for the Step 6 report artifact. Load this when generating the final
 report so the structure, section order, and table schemas are consistent.
 
-Artifact naming: `cloudwatch-cost-optimization-<scope-id>-<YYYY-MM-DD>.md`, where
-`<scope-id>` is the account ID for account scope, a short workload name for workload
-scope, or the management (payer) account ID for organization scope.
+Artifact naming: `cloudwatch-cost-optimization-<account-id>-<YYYY-MM-DD>.md`
 Example: `cloudwatch-cost-optimization-123456789012-2026-11-03.md`
 
 The first section is for a technology leader: decisions, owners, and money, in plain
@@ -16,8 +14,8 @@ making the changes.
 
 ### Report Header
 ```
-# Amazon CloudWatch Cost Optimization — <account ID | workload name | organization>
-Date: <YYYY-MM-DD> | Scope: <n accounts> / <regions> | Months analyzed: <first> to <last complete month>
+# Amazon CloudWatch Cost Optimization — <account-id>
+Date: <YYYY-MM-DD> | Regions: <regions> | Months analyzed: <first> to <last complete month>
 ```
 
 ## Executive Summary
@@ -54,12 +52,6 @@ cross-team work, weeks.
 **Prevent recurrence:** one line, for example a default log retention in the
 infrastructure as code that creates log groups.
 
-### Per-account roll-up (workload or organization scope only)
-| Account | CloudWatch spend | Change vs 3 months ago | Share of scope | Top charge family | Est. saving | Checks |
-|---------|------------------|------------------------|----------------|-------------------|-------------|--------|
-
-`Checks` is "full" or "spend only" (no cloud source in the Agent Space).
-
 ---
 
 ## Engineering detail
@@ -73,29 +65,27 @@ row (Synthetics, RUM, Application Signals, Database Insights, and similar). Writ
 not observed" where a family has usage but no cost.
 
 ### Top Log Groups
-| Account | Log group | Region | Class | Retention | Ingested (GB, month) | Stored (GB) | Filters / indexes | Producer | Owner |
-|---------|-----------|--------|-------|-----------|----------------------|-------------|-------------------|----------|-------|
+| Log group | Region | Class | Retention | Ingested (GB, month) | Stored (GB) | Filters / indexes | Producer | Owner |
+|-----------|--------|-------|-----------|----------------------|-------------|-------------------|----------|-------|
 
 ### Custom Metrics by Namespace
-| Account | Namespace | Region | Metrics (ListMetrics) | Cardinality driver (dimension) | Distinct values |
-|---------|-----------|--------|-----------------------|--------------------------------|-----------------|
+| Namespace | Region | Metrics (ListMetrics) | Cardinality driver (dimension) | Distinct values |
+|-----------|--------|-----------------------|--------------------------------|-----------------|
 
 State the billed metric count from Cost Explorer above the table.
 
 ### Cost Optimization Opportunities
-| # | Check (§) | Account | Resource | Severity | Current State | Recommendation | Impact | Evidence and method | Est. Monthly Saving |
-|---|-----------|---------|----------|----------|---------------|----------------|--------|---------------------|---------------------|
+| # | Check (§) | Resource | Severity | Current State | Recommendation | Impact | Evidence and method | Est. Monthly Saving |
+|---|-----------|----------|----------|---------------|----------------|--------|---------------------|---------------------|
 
 Impact and Evidence are mandatory for every row. Impact states, in plain language,
 what visibility, alerting, or compliance coverage changes (or "none"). Evidence names
 the Cost Explorer usage type, metric, or API field, and the method in one line (for
 example "storedBytes × share ingested more than 90 days ago; lower bound"). A saving
-that depends on an assumption says so. Drop the Account column for account scope.
+that depends on an assumption says so.
 
 ### Coverage and Limits
-- Accounts and Regions reviewed, spend-only accounts (with the reason), and Regions
-  skipped
-- For tag or Cost Category scope: the untagged remainder and how it was handled
+- Regions reviewed, and Regions skipped (with the reason)
 - Caps hit (log groups examined, `ListMetrics` pages, `DescribeQueries` span)
 - Whether the optional log-level sample ran, on which log groups, and the bytes it
   scanned

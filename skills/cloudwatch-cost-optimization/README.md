@@ -18,14 +18,11 @@ CloudWatch is often one of the largest lines on an AWS bill, and the cost builds
 - Flags alarms stuck in `INSUFFICIENT_DATA`, alarms with no actions, high-resolution and anomaly detection alarms, and dashboards nobody opens
 - Attributes Logs Insights scan spend by query and caller from query history, and flags `GetMetricData` polling (naming a caller only when CloudTrail data events prove it), unfiltered metric streams, and idle Contributor Insights rules
 - Applies interaction rules so overlapping savings on the same bytes are never double-counted
-- Reviews one account, a workload spread across several accounts (by account list, Cost Category, or cost allocation tag), or a whole organization, with a per-account roll-up
 - Opens the report with a decision-first Executive Summary for technology leaders: monthly and annualized spend and savings, the decisions only they can make, and the top actions with owner and effort, followed by the engineering detail
 
 ## Prerequisites
 
 ### 1. An AWS DevOps Agent Space with the target AWS account configured as a cloud source
-
-For a workload or organization review, the Agent Space also needs the AWS Organizations management (payer) account as a cloud source, or Cost Explorer access to the linked accounts, plus a cloud source for each account whose resources should be inspected. Accounts without one are reported with spend only. A tag-based workload needs its tag activated as a cost allocation tag.
 
 ### 2. IAM permissions for the DevOps Agent's primary cloud-source role
 
@@ -39,7 +36,6 @@ For a workload or organization review, the Agent Space also needs the AWS Organi
 - `cloudtrail:LookupEvents` (dashboard views), plus `cloudtrail:DescribeTrails`, `cloudtrail:GetEventSelectors`, `cloudtrail:ListEventDataStores`, `cloudtrail:GetEventDataStore` (whether `GetMetricData` callers are recorded)
 - `iam:ListRoles` (roles trusted by external monitoring accounts)
 - `ce:GetCostAndUsage`, granted via `ce:Get*`
-- `organizations:ListAccounts` (account names for workload and organization scope)
 
 There is no CloudFormation template to deploy for this skill. The skill doesn't call the AWS Price List API; it derives unit rates from Cost Explorer instead.
 
@@ -53,7 +49,7 @@ The skill operates in **read-only** mode. It never calls `PutRetentionPolicy`, `
 - Dashboard usage relies on `GetDashboard` management events in CloudTrail Event history, which covers 90 days.
 - `GetMetricData` callers can be confirmed only when a trail or CloudTrail Lake event data store records CloudWatch metric data events; otherwise the skill lists likely callers and asks.
 - Retention savings are estimated from up to 15 months of ingestion history, because stored bytes have no age breakdown; estimates for older log groups are lower bounds.
-- A workload defined by a cost allocation tag captures only tagged spend; the skill reports the untagged remainder separately.
+- One account per run. To review several accounts, run the skill once in each account.
 - The skill doesn't read log content, except in the optional log-level sample, which runs only after the user approves the log groups, time window, and estimated bytes scanned, and reports counts only.
 - Synthetics, RUM, Application Signals, Database Insights, Internet Monitor, and Network Flow Monitor charges are shown in the cost attribution but not analyzed.
 - Retention and alerting requirements are the user's to confirm; the skill states the tradeoff but does not decide it.
@@ -87,8 +83,8 @@ In DevOps Agent Chat:
 - *"Are any of my custom metrics high cardinality?"*
 - *"Find CloudWatch alarms and dashboards nobody uses."*
 - *"Who is running the Logs Insights queries that cost the most?"*
-- *"Review CloudWatch costs for our payments workload: accounts 111122223333 and 123456789012."*
-- *"Give our head of platform a summary of CloudWatch spend across the organization."*
+- *"Is Container Insights or detailed monitoring adding to our CloudWatch bill?"*
+- *"Give our head of platform a summary of CloudWatch spend in this account."*
 
 The agent will attribute spend, inventory the resources behind it, size each opportunity, and generate `cloudwatch-cost-optimization-<account-id>-<YYYY-MM-DD>.md`.
 

@@ -130,14 +130,14 @@
       ]
     },
     {
-      "id": "cloudwatch-cost-org-artifact-naming",
+      "id": "cloudwatch-cost-artifact-naming",
       "task_type": "chat",
-      "prompt": "For an Amazon CloudWatch cost optimization review of the whole organization, run from management account 123456789012, state the report artifact filename you would generate (use today's date in YYYY-MM-DD form). Do not run the review.",
-      "expected_output": "cloudwatch-cost-optimization-123456789012-<YYYY-MM-DD>.md, using the management (payer) account ID for organization scope.",
+      "prompt": "For an Amazon CloudWatch cost optimization review of account 123456789012, state the report artifact filename you would generate (use today's date in YYYY-MM-DD form). Do not run the review.",
+      "expected_output": "cloudwatch-cost-optimization-123456789012-<YYYY-MM-DD>.md",
       "should_trigger": true,
       "assertions": [
         {
-          "text": "The response proposes cloudwatch-cost-optimization-<management account ID>-<YYYY-MM-DD>.md",
+          "text": "The response proposes cloudwatch-cost-optimization-<account-id>-<YYYY-MM-DD>.md",
           "evaluator": "regex",
           "pattern": "cloudwatch-cost-optimization-123456789012-\\d{4}-\\d{2}-\\d{2}\\.md"
         }

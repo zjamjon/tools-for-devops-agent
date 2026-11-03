@@ -16,14 +16,12 @@ ce.GetCostAndUsage
   TimePeriod   = first day of the month 3 months ago → today
   Granularity  = MONTHLY
   Filter       = { Dimensions: { Key: SERVICE, Values: [AmazonCloudWatch] } }
-                 (And the workload filter — see Multi-account scope)
-  GroupBy      = [ USAGE_TYPE ]  (+ LINKED_ACCOUNT for workload or organization scope)
+  GroupBy      = [ USAGE_TYPE ]
   Metrics      = [ UnblendedCost, UsageQuantity ]
 
-# 2. Total AWS spend for the same scope and months
+# 2. Total AWS spend for the same months
 ce.GetCostAndUsage
-  same TimePeriod and Granularity, no SERVICE filter
-  GroupBy      = [ LINKED_ACCOUNT ] for workload or organization scope, else none
+  same TimePeriod and Granularity, no SERVICE filter, no GroupBy
   Metrics      = [ UnblendedCost ]
 ```
 
@@ -31,15 +29,14 @@ ce.GetCostAndUsage
   "month to date" and base the trend, growth tests, and monthly savings on the complete
   months.
 - Each `GetCostAndUsage` request is charged; these two calls (plus pagination) cover
-  every Region and account in scope. Don't make one call per Region.
-- `GroupBy` takes at most two keys. The Region is in the usage-type prefix, so don't
-  spend a key on `REGION`.
+  every Region. Don't make one call per Region: the Region is already in the
+  usage-type prefix.
 - To explain a spike inside a month, add one `DAILY` call over the last 60 days for the
   usage types that moved.
 - Regions with zero CloudWatch cost in the window are skipped in Step 3 unless the
   user named them.
 
-## Step 3 — Inventory per account and Region
+## Step 3 — Inventory per Region
 
 ### Log groups
 
@@ -210,44 +207,6 @@ normalized `queryString` and sum `bytesScanned`.
 cloudwatch.ListMetricStreams / GetMetricStream   # IncludeFilters, ExcludeFilters, OutputFormat
 cloudwatch.DescribeInsightRules                  # State, ManagedRule
 ```
-
-## Multi-account scope
-
-A workload often spans several accounts (for example production, staging,
-shared-services, and logging accounts). Spend and resources come from different
-places:
-
-| Data | Source | Needs |
-|------|--------|-------|
-| Spend per account | Cost Explorer in the management (payer) account, grouped by `LINKED_ACCOUNT` | The Agent Space's management-account cloud source, or Cost Explorer access to the linked accounts |
-| Account names | `organizations.ListAccounts` | Management or delegated-administrator account |
-| Resource checks (Step 3) | The APIs above, run in each account | A cloud source for that account in the Agent Space |
-
-**Selecting the workload's spend** — add one of these to the Step 2 `Filter` with
-`And`, next to the `SERVICE` filter:
-
-| Workload defined by | Filter |
-|---------------------|--------|
-| A list of accounts | `{ Dimensions: { Key: LINKED_ACCOUNT, Values: [<account IDs>] } }` |
-| A Cost Category value | `{ CostCategories: { Key: <category name>, Values: [<value>] } }` |
-| A cost allocation tag | `{ Tags: { Key: <tag key>, Values: [<value>] } }` |
-
-A tag works only once it is activated as a cost allocation tag, and it captures only
-tagged spend. Alarms, dashboards, and API requests are often untagged, so also run the
-call with `Tags: { Key: <tag key>, MatchOptions: [ABSENT] }` over the same accounts and
-report the untagged remainder rather than dropping it.
-
-**Running the resource checks** — run Step 3 in every account in scope that has a
-cloud source in the Agent Space. An account without one, or that returns
-`AccessDeniedException`, gets a "spend only" row in the per-account table and is named
-in Coverage and Limits. Never report a spend-only account as having no findings.
-
-**Duplicated telemetry** — where Cost Explorer shows `CentralizedBytes` in a central
-account, the same data is also billed at its source. Report it as INFO with both
-accounts' costs so the owners can decide whether both copies are needed.
-
-**Rolling up** — the Executive Summary covers the whole scope; the per-account table
-ranks accounts by CloudWatch spend; the engineering detail is grouped by account.
 
 ## Untrusted data
 

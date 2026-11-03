@@ -84,7 +84,7 @@ match on the remainder:
 | `CW:MetricStreamUsage` | Metric streams | §4.9 |
 | `CW:ContributorInsightRules`, `CW:ContributorInsightEvents` | Contributor Insights | §4.9 |
 | `CW:PromQL:SamplesScanned` | PromQL queries | §4.9 |
-| `CentralizedBytes` (`CentralizedBytesFree` is the free allowance) | Telemetry centralization | Multi-account (INFO) |
+| `CentralizedBytes` (`CentralizedBytesFree` is the free allowance) | Telemetry centralization | INFO: centralized copies held in this account, billed again at the source |
 | `Logs-LiveTail` | Live Tail | INFO |
 
 Other CloudWatch features also bill under `AmazonCloudWatch` (Synthetics
