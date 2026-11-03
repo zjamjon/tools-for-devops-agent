@@ -1,9 +1,12 @@
 [
-  {"query": "Which skill would help me reduce my Amazon CloudWatch costs? Just name it; do not run it.", "should_trigger": true},
-  {"query": "Is there a skill for finding CloudWatch log groups that never expire and sizing the savings from a retention policy? Answer yes or no with the skill name; do not execute it.", "should_trigger": true},
-  {"query": "Name the skill that reviews custom metric cardinality, unused alarms and dashboards for CloudWatch cost savings. Do not run any review.", "should_trigger": true},
-  {"query": "Which skill reduces CloudTrail Lake and duplicate trail costs? Just name it.", "should_trigger": false},
+  {"query": "Our CloudWatch bill doubled last month. What's driving it and how do we bring it down?", "should_trigger": true},
+  {"query": "Which of our log groups never expire, and what would setting retention save?", "should_trigger": true},
+  {"query": "Review CloudWatch costs for our payments workload across its production and staging accounts.", "should_trigger": true},
+  {"query": "Are our custom metrics or Container Insights costing too much?", "should_trigger": true},
+  {"query": "Why is my CloudTrail Lake event data store so expensive?", "should_trigger": false},
+  {"query": "Which source IPs send the most traffic through our NAT Gateway?", "should_trigger": false},
+  {"query": "Keep this investigation's Logs Insights queries under a $5 budget.", "should_trigger": false},
+  {"query": "How much does DevOps Agent itself cost us per month?", "should_trigger": false},
   {"query": "Create a CloudWatch alarm that pages me when Lambda errors exceed 5 in a minute", "should_trigger": false},
-  {"query": "Write a Python script that sorts a list of numbers", "should_trigger": false},
-  {"query": "What's the weather forecast for Seattle this weekend?", "should_trigger": false}
+  {"query": "Write a Python script that sorts a list of numbers", "should_trigger": false}
 ]

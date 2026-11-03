@@ -2,116 +2,155 @@
   "skill_name": "cloudwatch-cost-optimization",
   "evals": [
     {
-      "id": "cloudwatch-cost-severity-definitions",
+      "id": "cloudwatch-cost-context-smoke-test",
       "task_type": "chat",
-      "prompt": "List the five severity levels the Amazon CloudWatch cost optimization skill uses for its findings, in order from most to least urgent. No account access required.",
-      "expected_output": "Lists CRITICAL, HIGH, MEDIUM, LOW, INFO in that order.",
+      "files": [
+        "files/cloudwatch-context.json"
+      ],
+      "prompt": "Read cloudwatch-context.json. List each log group's name, class, and retention (say 'Never expire' where retention is missing). No analysis needed.",
+      "expected_output": "Lists the seven log groups with STANDARD class; /aws/vpc/flowlogs-prod and /app/tiny-tool show Never expire; the others show their retentionInDays.",
       "should_trigger": true,
       "assertions": [
         {
-          "text": "lists CRITICAL",
+          "text": "names the flow log group",
           "evaluator": "regex",
-          "pattern": "CRITICAL"
+          "pattern": "/aws/vpc/flowlogs-prod"
         },
         {
-          "text": "lists HIGH",
+          "text": "names the tiny tool group",
           "evaluator": "regex",
-          "pattern": "HIGH"
+          "pattern": "/app/tiny-tool"
         },
-        {
-          "text": "lists MEDIUM",
-          "evaluator": "regex",
-          "pattern": "MEDIUM"
-        },
-        {
-          "text": "lists LOW",
-          "evaluator": "regex",
-          "pattern": "LOW"
-        },
-        {
-          "text": "lists INFO",
-          "evaluator": "regex",
-          "pattern": "INFO"
-        },
-        "The five severity levels are given in order from most to least urgent (CRITICAL first, INFO last)"
+        "The response shows /aws/vpc/flowlogs-prod and /app/tiny-tool as Never expire (no retention)"
       ]
     },
     {
-      "id": "cloudwatch-cost-retention-vs-ingestion",
+      "id": "cloudwatch-cost-effective-rate-excludes-global",
       "task_type": "chat",
-      "prompt": "My CloudWatch Logs bill is mostly ingestion. A colleague says setting a 30-day retention policy on all our log groups will cut that ingestion charge. Is that right? Answer using the CloudWatch cost optimization skill's billing model. No account access required.",
-      "expected_output": "No. Retention only reduces the storage (archive) charge; ingestion is billed per GB ingested regardless of retention. To reduce ingestion, log less (log level, filtering at source), move eligible log groups to the Essentials (Infrequent Access) class, or send vended logs to S3.",
-      "should_trigger": true,
-      "assertions": [
-        "The response states that shortening retention does not reduce the ingestion charge",
-        "The response states that retention reduces the storage or archive charge",
-        "The response names at least one lever that does reduce ingestion, such as lowering log level, reducing volume at the source, the Essentials or Infrequent Access log class, or delivering vended logs to S3"
-      ]
-    },
-    {
-      "id": "cloudwatch-cost-essentials-eligibility",
-      "task_type": "chat",
-      "prompt": "I have two Standard-class CloudWatch log groups, each ingesting about 200 GB a month. /app/orders has two metric filters and a subscription filter to Firehose. /app/batch-audit has no metric filters, no subscription filters and no anomaly detector, and we only query it with Logs Insights during audits. Which one is a candidate for the Essentials (formerly Infrequent Access) log class, and how would we move it? No account access required.",
-      "expected_output": "Only /app/batch-audit is a candidate: Essentials doesn't support metric filters or subscription filters, so /app/orders must stay Standard. A log group's class can't be changed after creation, so the move is to create a new Essentials log group, repoint the producer, and let the old group expire under its retention. Essentials lowers ingestion cost only; storage and Logs Insights cost the same.",
-      "should_trigger": true,
-      "assertions": [
-        "The response identifies /app/batch-audit as the Essentials candidate",
-        "The response says /app/orders is not a candidate because Essentials does not support metric filters or subscription filters",
-        "The response states that a log group's class cannot be changed after creation, so a new log group must be created and the producer repointed",
-        "The response does not claim that Essentials reduces storage or Logs Insights charges"
-      ]
-    },
-    {
-      "id": "cloudwatch-cost-overlap-rule",
-      "task_type": "chat",
-      "prompt": "A Standard-class log group ingests 1,000 GB a month. A sample shows 60% of its events are DEBUG, and it is also an Essentials log class candidate. Using the CloudWatch cost optimization skill's interaction rules, on how many GB per month should the Essentials class saving be calculated if we also lower the log level to INFO? Explain briefly. No account access required.",
-      "expected_output": "About 400 GB a month. Apply the volume cut first (removing the 60% DEBUG volume leaves 400 GB), then size the class change on the remaining volume; the two savings must not both be counted on the same bytes.",
+      "files": [
+        "files/cloudwatch-context.json"
+      ],
+      "prompt": "Read cloudwatch-context.json. Using the CloudWatch cost optimization skill, what effective rate per GB should be used to size Standard log ingestion savings for October 2026, and which Cost Explorer rows feed it? Show the arithmetic.",
+      "expected_output": "$0.50 per GB: $3,000 ÷ 6,000 GB from USE1-DataProcessing-Bytes only. The Global-DataProcessing-Bytes row (5 GB at $0) is free-tier usage and is excluded from the rate.",
       "should_trigger": true,
       "assertions": [
         {
-          "text": "gives 400 GB as the remaining volume",
+          "text": "gives a rate of 0.50 per GB",
           "evaluator": "regex",
-          "pattern": "\\b400\\s*GB"
+          "pattern": "\\$?0\\.50?\\b"
         },
-        "The response explains that the log-level volume cut is applied first and the Essentials saving is sized on the volume that remains",
-        "The response does not compute the Essentials saving on the full 1,000 GB in addition to the full log-level saving"
+        "The response computes the rate from the USE1-DataProcessing-Bytes row (3,000 ÷ 6,000)",
+        "The response excludes the Global-DataProcessing-Bytes row from the calculation because it is free-tier usage"
       ]
     },
     {
-      "id": "cloudwatch-cost-cardinality",
+      "id": "cloudwatch-cost-retention-estimate",
       "task_type": "chat",
-      "prompt": "Our custom namespace MyApp publishes a Latency metric with dimensions Service (5 values), Endpoint (20 values) and RequestId (a new value for every request). The custom metrics line on our CloudWatch bill keeps growing. What does the CloudWatch cost optimization skill identify as the cost driver, and what should we change? No account access required.",
-      "expected_output": "Each unique combination of dimension values is a separate billed custom metric, so the RequestId dimension creates a new metric per request: a high-cardinality cardinality explosion. Drop RequestId (or move per-request detail into logs, e.g. EMF fields that are not dimensions) and keep Service and Endpoint, which bounds the metric at about 100 combinations. A growing count with a cardinality driver is CRITICAL or HIGH.",
-      "should_trigger": true,
-      "assertions": [
-        "The response identifies the RequestId dimension as the cost driver",
-        "The response explains that each unique combination of dimension values is billed as a separate custom metric",
-        "The response recommends removing RequestId as a dimension or moving per-request detail out of metric dimensions",
-        "The response rates the finding as CRITICAL or HIGH"
-      ]
-    },
-    {
-      "id": "cloudwatch-cost-artifact-naming",
-      "task_type": "chat",
-      "prompt": "For an Amazon CloudWatch cost optimization review of account 123456789012, state the report artifact filename you would generate (use today's date in YYYY-MM-DD form). Do not run the review.",
-      "expected_output": "Proposes an artifact name of the form cloudwatch-cost-optimization-123456789012-<YYYY-MM-DD>.md.",
+      "files": [
+        "files/cloudwatch-context.json"
+      ],
+      "prompt": "Read cloudwatch-context.json. Following the CloudWatch cost optimization skill, estimate how many GB of stored data a 90-day retention policy would remove from /aws/vpc/flowlogs-prod, and say how confident the estimate is. Show the method.",
+      "expected_output": "old_share = 48,000 ÷ 60,000 = 0.8 of the ingestion history is older than 90 days; GB removed ≈ 2,000 × 0.8 ≈ 1,600 GB. The group was created in 2023, before the 15-month history, so this is a lower bound.",
       "should_trigger": true,
       "assertions": [
         {
-          "text": "The response proposes an artifact filename of the form cloudwatch-cost-optimization-<account-id>-<YYYY-MM-DD>.md",
+          "text": "estimates about 1,600 GB",
           "evaluator": "regex",
-          "pattern": "cloudwatch-cost-optimization-[0-9]+-\\d{4}-\\d{2}-\\d{2}\\.md"
+          "pattern": "1,?600\\s*GB"
+        },
+        "The response derives the share older than 90 days from the ingestion history (48,000 of 60,000, or 80%)",
+        "The response says the estimate is a lower bound because the log group is older than the available metric history",
+        "The response does not assume that all 2,000 GB of storedBytes would be removed"
+      ]
+    },
+    {
+      "id": "cloudwatch-cost-essentials-candidates",
+      "task_type": "chat",
+      "files": [
+        "files/cloudwatch-context.json"
+      ],
+      "prompt": "Read cloudwatch-context.json. Using the CloudWatch cost optimization skill's eligibility rules, which log groups are candidates for the Essentials (formerly Infrequent Access) log class, and why is each of the others excluded?",
+      "expected_output": "Candidates: /app/batch-archive and /aws/vpc/flowlogs-prod (vended-log destinations qualify). Excluded: /aws/lambda/orders-api (metric filters), /ecs/payments (EMF metrics), /aws/containerinsights/prod-eks/performance (Container Insights performance logs), /app/search-api (field index). /app/tiny-tool is too small to matter. The class can't be changed, so each move needs a new log group.",
+      "should_trigger": true,
+      "assertions": [
+        "The response identifies /app/batch-archive as a candidate",
+        "The response identifies /aws/vpc/flowlogs-prod as a candidate or explicitly allows vended-log destinations",
+        "The response excludes /aws/lambda/orders-api because it has metric filters",
+        "The response excludes /ecs/payments because it carries embedded metric format (EMF) metrics",
+        "The response excludes /app/search-api because it has a field index, which Essentials does not support",
+        "The response states that the log class cannot be changed after creation, so a new log group is needed"
+      ]
+    },
+    {
+      "id": "cloudwatch-cost-severity-thresholds",
+      "task_type": "chat",
+      "files": [
+        "files/cloudwatch-context.json"
+      ],
+      "prompt": "Read cloudwatch-context.json. Total CloudWatch spend for October 2026 is about $9,300. Using the CloudWatch cost optimization skill's severity rules, what severity does (a) dropping the PodName dimension from Checkout/Latency get if it saves $1,500 a month, and (b) setting retention on /app/tiny-tool get? Explain using the thresholds.",
+      "expected_output": "(a) CRITICAL: $1,500 is about 16% of CloudWatch spend (≥10%) and MetricMonitorUsage grew in each of the last two complete months (2,700 → 4,000 → 6,000). (b) INFO: the group holds about 3 MB, so the saving is effectively zero after the free tier.",
+      "should_trigger": true,
+      "assertions": [
+        "The response rates the PodName dimension finding CRITICAL",
+        "The response justifies CRITICAL with the saving being at least 10% of CloudWatch spend and MetricMonitorUsage growing in each of the last two months",
+        "The response rates the /app/tiny-tool retention finding INFO, not HIGH or MEDIUM"
+      ]
+    },
+    {
+      "id": "cloudwatch-cost-getmetricdata-caller",
+      "task_type": "chat",
+      "files": [
+        "files/cloudwatch-context.json"
+      ],
+      "prompt": "Read cloudwatch-context.json. GetMetricData (GMD-Metrics) cost $1,500 in October. Following the CloudWatch cost optimization skill, who is calling GetMetricData, and how do you know?",
+      "expected_output": "It can't be confirmed: GetMetricData is a CloudTrail data event, and the only trail logs S3 data events, so no record of callers exists and LookupEvents (Event history) can't show it. monitoring-integration-role trusts an external account and is a likely candidate; ask the user which monitoring tools poll CloudWatch, and recommend a longer polling interval or a metric stream.",
+      "should_trigger": true,
+      "assertions": [
+        "The response says the caller cannot be confirmed from CloudTrail because GetMetricData is a data event that is not being recorded",
+        "The response does not claim to have found the caller through LookupEvents or CloudTrail Event history",
+        "The response names monitoring-integration-role as a possible caller rather than a confirmed one",
+        "The response asks the user which tools poll CloudWatch or recommends confirming before acting"
+      ]
+    },
+    {
+      "id": "cloudwatch-cost-executive-summary",
+      "task_type": "chat",
+      "files": [
+        "files/cloudwatch-context.json"
+      ],
+      "prompt": "Read cloudwatch-context.json. Write only the Executive Summary section of the CloudWatch cost optimization report for a head of platform engineering, following the skill's report template. Use the data in the file; where a saving needs a decision you can't make, say so.",
+      "expected_output": "A short, plain-language summary: monthly and annualized CloudWatch spend, its share of total AWS spend (about 9%), savings split into no-visibility-impact and needs-a-decision, a Decisions needed list (for example retention requirement for flow logs, the on-call paging alarm), and at most 5 top actions with owner and S/M/L effort.",
+      "should_trigger": true,
+      "assertions": [
+        "The response gives both monthly and annualized figures",
+        "The response states CloudWatch's share of total AWS spend",
+        "The response includes a Decisions needed list",
+        "The response lists top actions with an owner (or 'unassigned') and an effort size",
+        "The response does not quote a CloudWatch list price that isn't derived from the file"
+      ]
+    },
+    {
+      "id": "cloudwatch-cost-org-artifact-naming",
+      "task_type": "chat",
+      "prompt": "For an Amazon CloudWatch cost optimization review of the whole organization, run from management account 123456789012, state the report artifact filename you would generate (use today's date in YYYY-MM-DD form). Do not run the review.",
+      "expected_output": "cloudwatch-cost-optimization-123456789012-<YYYY-MM-DD>.md, using the management (payer) account ID for organization scope.",
+      "should_trigger": true,
+      "assertions": [
+        {
+          "text": "The response proposes cloudwatch-cost-optimization-<management account ID>-<YYYY-MM-DD>.md",
+          "evaluator": "regex",
+          "pattern": "cloudwatch-cost-optimization-123456789012-\\d{4}-\\d{2}-\\d{2}\\.md"
         }
       ]
     },
     {
-      "id": "cloudwatch-cost-negative-trigger-cloudtrail",
+      "id": "cloudwatch-cost-negative-trigger-natgw",
       "task_type": "chat",
-      "prompt": "Why is my CloudTrail Lake event data store so expensive, and do I have duplicate management-event trails?",
-      "expected_output": "The CloudWatch cost optimization skill should not activate - this is a CloudTrail trail and Lake cost question, which the cloudtrail-cost-optimization skill handles.",
+      "prompt": "Which source IPs are sending the most traffic through my NAT Gateway this week, based on VPC Flow Logs?",
+      "expected_output": "The CloudWatch cost optimization skill should not activate - this is NAT Gateway traffic analysis, handled by aws-natgw-traffic-analysis.",
       "should_trigger": false,
       "assertions": [
-        "The response addresses CloudTrail Lake and trail costs and does not run a CloudWatch Logs, metrics or alarms cost review"
+        "The response addresses NAT Gateway traffic analysis and does not run a CloudWatch cost review"
       ]
     }
   ]

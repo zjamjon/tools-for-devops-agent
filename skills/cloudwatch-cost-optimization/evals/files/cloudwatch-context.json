@@ -1,0 +1,253 @@
+{
+  "_note": "Synthetic data for evals. All names, numbers and account IDs are invented.",
+  "scope": {
+    "type": "account",
+    "account": "123456789012",
+    "regions": [
+      "us-east-1"
+    ]
+  },
+  "monthsComplete": [
+    "2026-08",
+    "2026-09",
+    "2026-10"
+  ],
+  "costExplorer": {
+    "service": "AmazonCloudWatch",
+    "rows": [
+      {
+        "month": "2026-08",
+        "usageType": "USE1-DataProcessing-Bytes",
+        "unblendedCost": 3000.0,
+        "usageQuantity": 6000.0,
+        "unit": "GB"
+      },
+      {
+        "month": "2026-09",
+        "usageType": "USE1-DataProcessing-Bytes",
+        "unblendedCost": 3000.0,
+        "usageQuantity": 6000.0,
+        "unit": "GB"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "USE1-DataProcessing-Bytes",
+        "unblendedCost": 3000.0,
+        "usageQuantity": 6000.0,
+        "unit": "GB"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "Global-DataProcessing-Bytes",
+        "unblendedCost": 0.0,
+        "usageQuantity": 5.0,
+        "unit": "GB"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "USE1-VendedLog-Bytes",
+        "unblendedCost": 2000.0,
+        "usageQuantity": 4000.0,
+        "unit": "GB"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "USE1-TimedStorage-ByteHrs",
+        "unblendedCost": 900.0,
+        "usageQuantity": 30000.0,
+        "unit": "GB-Mo"
+      },
+      {
+        "month": "2026-08",
+        "usageType": "USE1-CW:MetricMonitorUsage",
+        "unblendedCost": 800.0,
+        "usageQuantity": 2700.0,
+        "unit": "Metrics"
+      },
+      {
+        "month": "2026-09",
+        "usageType": "USE1-CW:MetricMonitorUsage",
+        "unblendedCost": 1200.0,
+        "usageQuantity": 4000.0,
+        "unit": "Metrics"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "USE1-CW:MetricMonitorUsage",
+        "unblendedCost": 1800.0,
+        "usageQuantity": 6000.0,
+        "unit": "Metrics"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "USE1-CW:GMD-Metrics",
+        "unblendedCost": 1500.0,
+        "usageQuantity": 150000000.0,
+        "unit": "Metrics"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "USE1-CW:AlarmMonitorUsage",
+        "unblendedCost": 60.0,
+        "usageQuantity": 600.0,
+        "unit": "Alarms"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "Global-CW:AlarmMonitorUsage",
+        "unblendedCost": 0.0,
+        "usageQuantity": 10.0,
+        "unit": "Alarms"
+      },
+      {
+        "month": "2026-10",
+        "usageType": "USE1-DashboardsUsageHour",
+        "unblendedCost": 40.0,
+        "usageQuantity": 13.0,
+        "unit": "Dashboards"
+      }
+    ],
+    "totalAwsSpend": {
+      "2026-08": 95000.0,
+      "2026-09": 98000.0,
+      "2026-10": 100000.0
+    }
+  },
+  "logGroups": [
+    {
+      "logGroupName": "/aws/vpc/flowlogs-prod",
+      "logGroupClass": "STANDARD",
+      "storedBytes": 2147483648000,
+      "creationTime": "2023-06-01",
+      "metricFilterCount": 0,
+      "subscriptionFilters": [],
+      "anomalyDetector": false,
+      "fieldIndexes": [],
+      "incomingBytesLast30Days": 4294967296000,
+      "incomingBytesHistory15Months": {
+        "total": 64424509440000,
+        "olderThan90Days": 51539607552000
+      },
+      "producer": "VPC Flow Log fl-0123456789abcdef0 (TrafficType ALL, MaxAggregationInterval 60)"
+    },
+    {
+      "logGroupName": "/aws/lambda/orders-api",
+      "logGroupClass": "STANDARD",
+      "retentionInDays": 3653,
+      "storedBytes": 429496729600,
+      "creationTime": "2024-02-10",
+      "metricFilterCount": 2,
+      "subscriptionFilters": [],
+      "anomalyDetector": false,
+      "fieldIndexes": [],
+      "incomingBytesLast30Days": 1610612736000,
+      "lambdaLoggingConfig": {
+        "LogFormat": "JSON",
+        "ApplicationLogLevel": "DEBUG"
+      }
+    },
+    {
+      "logGroupName": "/ecs/payments",
+      "logGroupClass": "STANDARD",
+      "retentionInDays": 30,
+      "storedBytes": 96636764160,
+      "creationTime": "2025-01-15",
+      "metricFilterCount": 0,
+      "subscriptionFilters": [],
+      "anomalyDetector": false,
+      "fieldIndexes": [],
+      "incomingBytesLast30Days": 2684354560000,
+      "carriesEmbeddedMetricFormat": true
+    },
+    {
+      "logGroupName": "/aws/containerinsights/prod-eks/performance",
+      "logGroupClass": "STANDARD",
+      "retentionInDays": 30,
+      "storedBytes": 64424509440,
+      "creationTime": "2025-03-01",
+      "metricFilterCount": 0,
+      "subscriptionFilters": [],
+      "anomalyDetector": false,
+      "fieldIndexes": [],
+      "incomingBytesLast30Days": 1288490188800
+    },
+    {
+      "logGroupName": "/app/batch-archive",
+      "logGroupClass": "STANDARD",
+      "retentionInDays": 365,
+      "storedBytes": 322122547200,
+      "creationTime": "2025-05-01",
+      "metricFilterCount": 0,
+      "subscriptionFilters": [],
+      "anomalyDetector": false,
+      "fieldIndexes": [],
+      "incomingBytesLast30Days": 858993459200,
+      "accessPattern": "Queried with Logs Insights during quarterly audits only"
+    },
+    {
+      "logGroupName": "/app/search-api",
+      "logGroupClass": "STANDARD",
+      "retentionInDays": 90,
+      "storedBytes": 128849018880,
+      "creationTime": "2025-06-01",
+      "metricFilterCount": 0,
+      "subscriptionFilters": [],
+      "anomalyDetector": false,
+      "fieldIndexes": [
+        "requestId"
+      ],
+      "incomingBytesLast30Days": 644245094400
+    },
+    {
+      "logGroupName": "/app/tiny-tool",
+      "logGroupClass": "STANDARD",
+      "storedBytes": 3145728,
+      "creationTime": "2024-09-01",
+      "metricFilterCount": 0,
+      "subscriptionFilters": [],
+      "anomalyDetector": false,
+      "fieldIndexes": [],
+      "incomingBytesLast30Days": 1048576
+    }
+  ],
+  "customMetrics": [
+    {
+      "namespace": "Checkout",
+      "metricName": "Latency",
+      "dimensions": {
+        "Service": 5,
+        "Endpoint": 20,
+        "PodName": 5400
+      },
+      "listMetricsCount": 5800
+    }
+  ],
+  "cloudTrail": {
+    "trails": [
+      {
+        "name": "org-trail",
+        "managementEvents": true,
+        "dataEventResourceTypes": [
+          "AWS::S3::Object"
+        ]
+      }
+    ],
+    "eventDataStores": []
+  },
+  "iamRolesTrustingExternalAccounts": [
+    {
+      "roleName": "monitoring-integration-role",
+      "trustedAccount": "111122223333"
+    }
+  ],
+  "alarms": {
+    "total": 610,
+    "insufficientDataWholeWindow": 45,
+    "pagingOnCall": [
+      "payments-p99-latency"
+    ]
+  },
+  "dashboards": {
+    "total": 13
+  }
+}
