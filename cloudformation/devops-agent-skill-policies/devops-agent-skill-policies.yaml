@@ -673,5 +673,6 @@ Outputs:
       Skills covered by AIDevOpsAgentAccessPolicy (no extra policy needed):
         - aws-eks-operations-review, eks-upgrade-readiness, enrich-with-aws-security-agent, crm-production-investigation-guidelines
         - cloudtrail-cost-optimization, config-cost-optimization, guardduty-cost-optimization (ce:Get* and s3:GetLifecycleConfiguration already granted on * by the managed policy)
+        - cloudwatch-cost-optimization (logs:Describe*/List*/StartQuery/GetQueryResults, cloudwatch:List*/Describe*/GetDashboard, lambda:List*, ce:Get* already granted on * by the managed policy)
       No IAM required:
         - skip-scheduled-maintenance
