@@ -16,12 +16,20 @@ CloudWatch is often one of the largest lines on an AWS bill, and the cost builds
 - Finds high-cardinality custom metrics and the dimension driving them
 - Flags alarms stuck in `INSUFFICIENT_DATA`, alarms with no actions, high-resolution and anomaly detection alarms, and dashboards nobody opens
 - Attributes Logs Insights scan spend by query and caller from query history, and flags `GetMetricData` polling, unfiltered metric streams, and idle Contributor Insights rules
+- Finds orphaned resources: log groups, alarms, and dashboards left behind after the Lambda function or other resource they observe was deleted
 - Applies interaction rules so overlapping savings on the same bytes are never double-counted
-- Produces a severity-ranked report artifact with a priority matrix and next steps
+- Reviews one account, a workload spread across several accounts (by account list, Cost Category, or cost allocation tag), or a whole organization, with a per-account view
+- Opens the report with a one-screen Leadership Summary (spend trend, share of the AWS bill, savings range, posture KPIs, top 3 actions), followed by the engineering detail; accounts whose spend is within the free tier get a short form
 
 ## Prerequisites
 
 ### 1. An AWS DevOps Agent Space with the target AWS account configured as a cloud source
+
+For a workload or organization review, the Agent Space also needs:
+
+- the AWS Organizations management (payer) account, or an account with Cost Explorer access to the linked accounts, for spend across accounts
+- a cloud-source association for each account whose resources should be inspected. Accounts without one are reported with spend only.
+- for tag-based workloads, the tag activated as a cost allocation tag
 
 ### 2. IAM permissions for the DevOps Agent's primary cloud-source role
 
@@ -33,7 +41,7 @@ CloudWatch is often one of the largest lines on an AWS bill, and the cost builds
 - `ec2:DescribeFlowLogs` (vended log sources)
 - `cloudtrail:LookupEvents` (optional: dashboard views and `GetMetricData` callers)
 - `ce:GetCostAndUsage`, granted via `ce:Get*`
-- `organizations:ListAccounts` (organization scope)
+- `organizations:ListAccounts` (account names for workload and organization scope)
 
 There is no CloudFormation template to deploy for this skill. The skill doesn't call the AWS Price List API; it derives unit rates from Cost Explorer instead.
 
@@ -47,6 +55,7 @@ The skill operates in **read-only** mode. It never calls `PutRetentionPolicy`, `
 - Dashboard usage relies on CloudTrail recording `GetDashboard` read events. Where it doesn't, the skill reports usage as unknown.
 - The skill doesn't read log content, except in the optional log-level sample, which runs only after the user approves the log groups, time window, and estimated bytes scanned, and reports counts only.
 - Synthetics, RUM, Application Signals, Database Insights, Internet Monitor, and Network Flow Monitor charges are shown in the cost attribution but not analyzed.
+- A workload defined by a cost allocation tag captures only tagged spend; the skill reports the untagged remainder separately.
 - Retention and alerting requirements are the user's to confirm; the skill states the tradeoff but does not decide it.
 
 ## Agent Types
@@ -78,8 +87,10 @@ In DevOps Agent Chat:
 - *"Are any of my custom metrics high cardinality?"*
 - *"Find CloudWatch alarms and dashboards nobody uses."*
 - *"Who is running the Logs Insights queries that cost the most?"*
+- *"Review CloudWatch costs for our payments workload: accounts 111122223333 and 123456789012."*
+- *"Give me a leadership summary of CloudWatch spend across the organization."*
 
-The agent will attribute spend, inventory the resources behind it, size each opportunity, and generate `cloudwatch-cost-optimization-<account-id>-<YYYY-MM-DD>.md`.
+The agent will attribute spend, inventory the resources behind it, size each opportunity, and generate `cloudwatch-cost-optimization-<account-id | workload | org>-<YYYY-MM-DD>.md`, opening with a Leadership Summary.
 
 ## Related
 

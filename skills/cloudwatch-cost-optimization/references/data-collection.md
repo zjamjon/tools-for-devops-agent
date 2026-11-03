@@ -11,18 +11,30 @@ sample, which need the user's approval first (see SKILL.md Step 4).
 ## Step 2 — Cost Explorer attribution
 
 ```
+# 1. CloudWatch spend, trend, and previous window in one call
 ce.GetCostAndUsage
-  TimePeriod   = analysis window (default: last 30 full days)
-  Granularity  = MONTHLY (DAILY when explaining a spike)
+  TimePeriod   = first day of the month 6 months ago → end of the analysis window
+  Granularity  = MONTHLY (DAILY over the last 60 days when explaining a spike)
   Filter       = { Dimensions: { Key: SERVICE, Values: [AmazonCloudWatch] } }
-  GroupBy      = [ USAGE_TYPE ]  (+ REGION, or LINKED_ACCOUNT for organization scope)
+                 (And the workload filter — see Multi-account scope)
+  GroupBy      = [ USAGE_TYPE ]  (+ LINKED_ACCOUNT for workload or organization scope)
   Metrics      = [ UnblendedCost, UsageQuantity ]
+
+# 2. Total AWS spend for the same scope and months (CloudWatch's share of the bill)
+ce.GetCostAndUsage
+  same TimePeriod and Granularity, no SERVICE filter, no GroupBy
+  (GroupBy LINKED_ACCOUNT for workload or organization scope)
+  Metrics      = [ UnblendedCost ]
 ```
 
-- Each `GetCostAndUsage` request is charged; make as few as the scope needs (one per
-  window and grouping, not one per Region).
-- For a spike, compare two equal windows (for example this month and last month) and
-  report which usage types moved.
+- Each `GetCostAndUsage` request is charged; make as few as the scope needs. These
+  two calls (plus pagination) cover every Region and account in scope.
+- `GroupBy` takes at most two keys. The Region is already in the usage-type prefix, so
+  don't spend a key on `REGION`.
+- The current month is partial: label it month-to-date, and compute the trend from
+  complete months.
+- For a spike, compare the two most recent equal windows and report which usage types
+  moved.
 - Regions with zero CloudWatch cost in the window are skipped in Step 3 unless the
   user named them.
 
@@ -83,9 +95,14 @@ Match each vended source to its destination log group so §4.2 can name the prod
 ### Lambda log levels
 
 ```
-lambda.ListFunctions              # paginate; record LoggingConfig.LogFormat,
+lambda.ListFunctions              # paginate FULLY; record FunctionName, LoggingConfig.LogFormat,
                                   # ApplicationLogLevel, SystemLogLevel, LogGroup
 ```
+
+Never sample configuration APIs: `ListFunctions` is free and the complete list is
+needed both for log levels (§4.4) and to find orphaned `/aws/lambda/…` log groups
+(§4.10). The only capped calls in this skill are the per-log-group filter lookups
+below and the §4.4 log-content sample.
 
 `ApplicationLogLevel` and `SystemLogLevel` apply only when `LogFormat` is `JSON`. A
 function with `Text` format has no service-side level, so its verbosity is unknown
@@ -152,13 +169,42 @@ cloudwatch.ListMetricStreams / GetMetricStream   # IncludeFilters, ExcludeFilter
 cloudwatch.DescribeInsightRules                  # State, ManagedRule
 ```
 
-## Organization scope
+## Multi-account scope
 
-From the management or delegated-administrator account, `organizations.ListAccounts`
-lists member accounts, and Cost Explorer grouped by `LINKED_ACCOUNT` attributes spend
-per account. Inventory calls (Step 3) run per account and need access to that account;
-if the agent space has only the management account configured, report spend by member
-account and say the resource-level checks ran only where access exists.
+A workload often spans several accounts (for example separate production, staging,
+shared-services, and logging accounts). Spend and resources come from different
+places:
+
+| Data | Source | Needs |
+|------|--------|-------|
+| Spend per account | Cost Explorer in the management (payer) account, grouped by `LINKED_ACCOUNT` | The Agent Space's management-account role, or Cost Explorer access to linked accounts |
+| Account names | `organizations.ListAccounts` | Management or delegated-administrator account |
+| Resource checks (Step 3) | The APIs above, run in each account | A cloud-source association for that account in the Agent Space |
+
+**Selecting the workload's spend** — add one of these to the Step 2 `Filter` with
+`And`, next to the `SERVICE` filter:
+
+| Workload defined by | Filter |
+|---------------------|--------|
+| A list of accounts | `{ Dimensions: { Key: LINKED_ACCOUNT, Values: [<account IDs>] } }` |
+| A Cost Category value | `{ CostCategories: { Key: <category name>, Values: [<value>] } }` |
+| A cost allocation tag | `{ Tags: { Key: <tag key>, Values: [<value>] } }` |
+
+A tag works only if it is activated as a cost allocation tag, and it captures only
+tagged spend. CloudWatch charges such as alarms, dashboards, and API requests often
+aren't tagged, so run the call a second time with
+`Tags: { Key: <tag key>, MatchOptions: [ABSENT] }` restricted to the same accounts and
+report the untagged remainder rather than silently dropping it.
+
+**Running the resource checks** — run Step 3 in every account in scope that the Agent
+Space can reach. An account without an association, or that returns
+`AccessDeniedException`, gets a spend-only row in the per-account table and is named
+in Coverage and Limits. Never report a spend-only account as having no findings.
+
+**Rolling up** — the Leadership Summary covers the whole workload or organization. The
+per-account table ranks accounts by CloudWatch spend, then the engineering detail is
+grouped by account. Posture KPIs are computed across all reachable accounts and say how
+many accounts they cover.
 
 ## Untrusted data
 
